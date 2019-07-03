@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"strconv"
 
 	"io/ioutil"
 	"os"
@@ -57,14 +58,23 @@ func main() {
 		}
 	}
 
-	checkIds(file, key)
+	fmt.Print("How many workers would you like to use? - how many IDs can be processed at a time (default is 50): ")
+
+	scanner.Scan()
+	workerAmount := 50
+	workerInput := scanner.Text()
+
+	if workerInput != "" {
+		workerAmount, err = strconv.Atoi(workerInput)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	checkIds(file, key, workerAmount)
 }
 
-func checkForAgreement(s string) bool {
-	return s == "y" || s == "Y" || s == "Yes" || s == "yes" || s == ""
-}
-
-func checkIds(file *os.File, key string) {
+func checkIds(file *os.File, key string, workerAmount int) {
 	fileScanner := bufio.NewScanner(file)
 
 	for fileScanner.Scan() {
@@ -77,4 +87,8 @@ func checkIds(file *os.File, key string) {
 
 		fmt.Println(resp.Response.Success)
 	}
+}
+
+func checkForAgreement(s string) bool {
+	return s == "y" || s == "Y" || s == "Yes" || s == "yes" || s == ""
 }
