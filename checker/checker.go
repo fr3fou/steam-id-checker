@@ -30,7 +30,7 @@ func CheckIds(words io.Reader, key string, workerAmount int) {
 		go worker(jobs, results)
 	}
 
-	limit := 1
+	limit := 0
 
 	// Fill in the jobs queue (channel)
 	for ; wordsScanner.Scan(); limit++ {
@@ -54,8 +54,6 @@ func CheckIds(words io.Reader, key string, workerAmount int) {
 			fmt.Printf("(%d out of %d) - %s is taken on Steam.", i, limit, result.id)
 		}
 	}
-
-	close(results)
 }
 
 func worker(jobs <-chan idChecker, results chan<- idChecker) {
