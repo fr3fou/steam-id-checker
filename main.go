@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fr3fou/go-steamapi"
+	"github.com/fr3fou/steam-id-checker/checker"
 )
 
 func main() {
@@ -71,22 +71,7 @@ func main() {
 		}
 	}
 
-	checkIds(file, key, workerAmount)
-}
-
-func checkIds(file *os.File, key string, workerAmount int) {
-	fileScanner := bufio.NewScanner(file)
-
-	for fileScanner.Scan() {
-		id := fileScanner.Text()
-		resp, err := steamapi.ResolveVanityURL(id, key)
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		fmt.Println(resp.Response.Success)
-	}
+	checker.CheckIds(file, key, workerAmount)
 }
 
 func checkForAgreement(s string) bool {
