@@ -14,9 +14,12 @@ type idChecker struct {
 
 // CheckIds takes in an io.Reader and calls the Steam API against each word in
 // the reader with workerAmont of workers to check whether the given ID exists
+// TODO think of what should this method return so that it can be used anywhere
 func CheckIds(words io.Reader, key string, workerAmount int) {
 	fileScanner := bufio.NewScanner(words)
 
+	// TODO what should the buffer size be?
+	// I think it has to be the total amount of words (but how do I get them from the reader?)
 	jobs := make(chan idChecker)
 	results := make(chan *idChecker)
 
