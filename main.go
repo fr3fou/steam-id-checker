@@ -14,6 +14,11 @@ import (
 )
 
 func main() {
+	// TODO: check for interactive flag (-i)
+	interactiveCli()
+}
+
+func interactiveCli() {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Enter the path to txt file: ")
 
