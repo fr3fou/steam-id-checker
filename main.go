@@ -20,8 +20,9 @@ func main() {
 
 func interactiveCli() {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print("Enter the path to txt file: ")
+	finished := make(chan string)
 
+	fmt.Print("Enter the path to txt file: ")
 	scanner.Scan()
 	path := scanner.Text()
 
@@ -29,6 +30,33 @@ func interactiveCli() {
 
 	if err != nil {
 		log.Fatal("The path you entered isn't a valid file!", err)
+	}
+
+	fmt.Print("Would you like to scrape or use the Steam API? (default is scrape): ")
+	scanner.Scan()
+	method := scanner.Text()
+
+	fmt.Print("How many workers would you like to use? - how many IDs can be processed at a time (default is 10): ")
+
+	scanner.Scan()
+	workerAmount := 10
+	workerInput := scanner.Text()
+
+	if workerInput != "" {
+		workerAmount, err = strconv.Atoi(workerInput)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if checkForScrapingMethod(method) {
+		go checker.CheckIDs(file, workerAmount, finished)
+
+		for val := range finished {
+			fmt.Println(val)
+		}
+
+		return
 	}
 
 	key := ""
@@ -63,29 +91,29 @@ func interactiveCli() {
 		}
 	}
 
-	fmt.Print("How many workers would you like to use? - how many IDs can be processed at a time (default is 10): ")
-
-	scanner.Scan()
-	workerAmount := 10
-	workerInput := scanner.Text()
-
-	if workerInput != "" {
-		workerAmount, err = strconv.Atoi(workerInput)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	finished := make(chan string)
-
-	go checker.CheckIds(file, key, workerAmount, finished)
+	go checker.CheckIDsWithAPI(file, key, workerAmount, finished)
 
 	for val := range finished {
 		fmt.Println(val)
 	}
 
+	close(finished)
 }
 
 func checkForAgreement(s string) bool {
-	return s == "y" || s == "Y" || s == "Yes" || s == "yes" || s == ""
+	return checkForAnswer(s, []string{"y", "Y", "Yes", "yes", ""})
+}
+
+func checkForScrapingMethod(s string) bool {
+	return checkForAnswer(s, []string{"scrape", "web", ""})
+}
+
+func checkForAnswer(s string, answers []string) bool {
+	for _, val := range answers {
+		if val == s {
+			return true
+		}
+	}
+
+	return false
 }
