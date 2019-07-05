@@ -11,18 +11,25 @@ import (
 	"sync"
 
 	"github.com/fr3fou/go-steamapi"
+	"github.com/ti/nasync"
 )
 
 // CheckIDsWithAPI takes in an io.Reader and calls the Steam API against each word in
 // the reader with workerAmont of workers to check whether the given ID exists
 func CheckIDsWithAPI(words io.Reader, key string, workerAmount int, finished chan string) {
+	async := nasync.New(workerAmount, workerAmount)
+	defer async.Close()
+
 	wordsScanner := bufio.NewScanner(words)
 	var wg sync.WaitGroup
 
 	for wordsScanner.Scan() {
 		id := wordsScanner.Text()
 		wg.Add(1)
-		go checkIDWithAPI(id, key, &wg, finished)
+
+		async.Do(func() {
+			checkIDWithAPI(id, key, &wg, finished)
+		})
 	}
 
 	wg.Wait()
@@ -32,13 +39,19 @@ func CheckIDsWithAPI(words io.Reader, key string, workerAmount int, finished cha
 // CheckIDs takes in an io.Reader and scrapes the webpage against each word in
 // the reader with workerAmount of workers to check whther the given ID exists
 func CheckIDs(words io.Reader, workerAmount int, finished chan string) {
+	async := nasync.New(workerAmount, workerAmount)
+	defer async.Close()
+
 	wordsScanner := bufio.NewScanner(words)
 	var wg sync.WaitGroup
 
 	for wordsScanner.Scan() {
 		id := wordsScanner.Text()
 		wg.Add(1)
-		go checkID(id, &wg, finished)
+
+		async.Do(func() {
+			checkID(id, &wg, finished)
+		})
 	}
 
 	wg.Wait()

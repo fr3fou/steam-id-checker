@@ -96,8 +96,6 @@ func interactiveCli() {
 	for val := range finished {
 		fmt.Println(val)
 	}
-
-	close(finished)
 }
 
 func checkForAgreement(s string) bool {

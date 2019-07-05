@@ -1,2 +1,4 @@
 github.com/fr3fou/go-steamapi v0.0.0-20190703215030-e842009d30f2 h1:SC9WDxAVmaEkjLHCgBz6H1Z2u2oalJ6jgnzS+nEq+U0=
 github.com/fr3fou/go-steamapi v0.0.0-20190703215030-e842009d30f2/go.mod h1:6lvI2b/XHZ+Yyd8t9DT7x52me2faqAofVOSNsfo3yDE=
+github.com/ti/nasync v1.0.0 h1:oSYAzAFzcuyPHr2USCmgyWL+qQmvGYjEXJk5uRR0Flw=
+github.com/ti/nasync v1.0.0/go.mod h1:Jb1YmGtF/roOOkobVr5mSq2+/+YKavpFEY2PvG+vygw=
