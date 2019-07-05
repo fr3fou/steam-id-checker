@@ -122,12 +122,14 @@ func checkID(id string, wg *sync.WaitGroup, finished chan SteamID) {
 			IsTaken: false,
 			Msg:     fmt.Sprintf("%s is not taken on Steam!", id),
 		}
-	} else {
-		finished <- SteamID{
-			ID:      id,
-			IsTaken: true,
-			Msg:     fmt.Sprintf("%s is taken on Steam!", id),
-		}
+
+		return
+	}
+
+	finished <- SteamID{
+		ID:      id,
+		IsTaken: true,
+		Msg:     fmt.Sprintf("%s is taken on Steam!", id),
 	}
 }
 
@@ -145,11 +147,13 @@ func checkIDWithAPI(id, key string, wg *sync.WaitGroup, finished chan SteamID) {
 			IsTaken: false,
 			Msg:     fmt.Sprintf("%s is not taken on Steam!", id),
 		}
-	} else {
-		finished <- SteamID{
-			ID:      id,
-			IsTaken: true,
-			Msg:     fmt.Sprintf("%s is taken on Steam!", id),
-		}
+
+		return
+	}
+
+	finished <- SteamID{
+		ID:      id,
+		IsTaken: true,
+		Msg:     fmt.Sprintf("%s is taken on Steam!", id),
 	}
 }
