@@ -66,7 +66,6 @@ func CheckIDs(words io.Reader, workerAmount int, finished chan SteamID) {
 			tempChannel := make(chan SteamID)
 
 			defer wg.Done()
-			defer close(tempChannel)
 
 			go checkID(id, nil, tempChannel)
 
