@@ -4,73 +4,39 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/fr3fou/go-steamapi"
 )
-
-type idChecker struct {
-	id      string
-	key     string
-	isTaken bool
-}
 
 // CheckIds takes in an io.Reader and calls the Steam API against each word in
 // the reader with workerAmont of workers to check whether the given ID exists
 // TODO think of what should this method return so that it can be used anywhere
 func CheckIds(words io.Reader, key string, workerAmount int) {
 	wordsScanner := bufio.NewScanner(words)
+	var wg sync.WaitGroup
 
-	// TODO what should the buffer size be?
-	// I think it has to be the total amount of words (but how do I get them from the reader?)
-	jobs := make(chan idChecker)
-	results := make(chan idChecker)
-
-	limit := 0
-
-	// Fill in the jobs queue (channel)
-	go func() {
-		for wordsScanner.Scan() {
-			id := wordsScanner.Text()
-
-			jobs <- idChecker{
-				id:      id,
-				key:     key,
-				isTaken: false,
-			}
-
-			limit++
-		}
-
-		close(jobs)
-	}()
-
-	// Start up workerAmount of workers
-	for w := 1; w < workerAmount; w++ {
-		go worker(jobs, results)
+	for wordsScanner.Scan() {
+		id := wordsScanner.Text()
+		wg.Add(1)
+		go checkID(id, key, &wg)
 	}
 
-	for i := 0; i < limit; i++ {
-		result := <-results
-		if !result.isTaken {
-			// Probs change to something else other than fmt.Println?
-			fmt.Printf("(%d out of %d) - %s is not taken on Steam!\n", i, limit, result.id)
-		} else {
-			// Probs change to something else other than fmt.Println?
-			fmt.Printf("(%d out of %d) - %s is taken on Steam.\n", i, limit, result.id)
-		}
-	}
+	wg.Wait()
+	fmt.Println("done")
 }
 
-func worker(jobs <-chan idChecker, results chan<- idChecker) {
-	// for every job in the queue (channel), call checkID
-	for j := range jobs {
-		results <- checkID(j)
-	}
-}
-
-func checkID(ic idChecker) idChecker {
+func checkID(id, key string, wg *sync.WaitGroup) {
 	// TODO: error handling
-	resp, _ := steamapi.ResolveVanityURL(ic.id, ic.key)
-	ic.isTaken = resp.Response.Success == 1
-	return ic
+	resp, _ := steamapi.ResolveVanityURL(id, key)
+
+	if !(resp.Response.Success == 1) {
+		// Probs change to something else other than fmt.Println?
+		fmt.Printf("%s is not taken on Steam!\n", id)
+	} else {
+		// Probs change to something else other than fmt.Println?
+		fmt.Printf("%s is taken on Steam!\n", id)
+	}
+
+	wg.Done()
 }
