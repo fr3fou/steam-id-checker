@@ -63,10 +63,10 @@ func interactiveCli() {
 		}
 	}
 
-	fmt.Print("How many workers would you like to use? - how many IDs can be processed at a time (default is 50): ")
+	fmt.Print("How many workers would you like to use? - how many IDs can be processed at a time (default is 10): ")
 
 	scanner.Scan()
-	workerAmount := 50
+	workerAmount := 10
 	workerInput := scanner.Text()
 
 	if workerInput != "" {
@@ -76,7 +76,14 @@ func interactiveCli() {
 		}
 	}
 
-	checker.CheckIds(file, key, workerAmount)
+	finished := make(chan string)
+
+	go checker.CheckIds(file, key, workerAmount, finished)
+
+	for val := range finished {
+		fmt.Println(val)
+	}
+
 }
 
 func checkForAgreement(s string) bool {

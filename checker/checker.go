@@ -11,32 +11,28 @@ import (
 
 // CheckIds takes in an io.Reader and calls the Steam API against each word in
 // the reader with workerAmont of workers to check whether the given ID exists
-// TODO think of what should this method return so that it can be used anywhere
-func CheckIds(words io.Reader, key string, workerAmount int) {
+func CheckIds(words io.Reader, key string, workerAmount int, finished chan string) {
 	wordsScanner := bufio.NewScanner(words)
 	var wg sync.WaitGroup
 
 	for wordsScanner.Scan() {
 		id := wordsScanner.Text()
 		wg.Add(1)
-		go checkID(id, key, &wg)
+		go checkID(id, key, &wg, finished)
 	}
 
 	wg.Wait()
-	fmt.Println("done")
+	close(finished)
 }
 
-func checkID(id, key string, wg *sync.WaitGroup) {
+func checkID(id, key string, wg *sync.WaitGroup, finished chan string) {
 	// TODO: error handling
 	resp, _ := steamapi.ResolveVanityURL(id, key)
+	defer wg.Done()
 
 	if !(resp.Response.Success == 1) {
-		// Probs change to something else other than fmt.Println?
-		fmt.Printf("%s is not taken on Steam!\n", id)
+		finished <- fmt.Sprintf("%s is not taken on Steam!", id)
 	} else {
-		// Probs change to something else other than fmt.Println?
-		fmt.Printf("%s is taken on Steam!\n", id)
+		finished <- fmt.Sprintf("%s is taken on Steam!", id)
 	}
-
-	wg.Done()
 }
