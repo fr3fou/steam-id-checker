@@ -36,9 +36,7 @@ func CheckIDsWithAPI(words io.Reader, key string, workerAmount int, finished cha
 		id := wordsScanner.Text()
 		wg.Add(1)
 
-		async.Do(func() {
-			checkIDWithAPI(id, key, &wg, finished)
-		})
+		async.Do(checkIDWithAPI, id, key, &wg, finished)
 	}
 
 	wg.Wait()
@@ -58,9 +56,7 @@ func CheckIDs(words io.Reader, workerAmount int, finished chan SteamID) {
 		id := wordsScanner.Text()
 		wg.Add(1)
 
-		async.Do(func() {
-			checkID(id, &wg, finished)
-		})
+		async.Do(checkID, id, &wg, finished)
 	}
 
 	wg.Wait()
