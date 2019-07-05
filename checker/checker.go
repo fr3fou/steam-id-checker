@@ -62,7 +62,7 @@ func checkID(id string, wg *sync.WaitGroup, finished chan string) {
 		log.Fatal(err)
 	}
 
-	if !(strings.Contains(string(html), "<h3>The specified profile could not be found.</h3>")) {
+	if strings.Contains(string(html), "<h3>The specified profile could not be found.</h3>") {
 		finished <- fmt.Sprintf("%s is not taken on Steam!", id)
 	} else {
 		finished <- fmt.Sprintf("%s is taken on Steam!", id)
