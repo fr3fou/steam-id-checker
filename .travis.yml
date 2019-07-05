@@ -6,7 +6,10 @@ go:
 env:
   - GO111MODULE=on
 
+before_install:
+  - go get github.com/mitchellh/gox
+
 install: true
 
 script:
-  - go build .
+  - gox -os="linux darwin windows" -arch="amd64" -ldflags "-X main.Rev=`git rev-parse --short HEAD`" 
