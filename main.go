@@ -103,7 +103,7 @@ func interactiveCli() {
 		}
 
 		if !val.IsTaken {
-			_, err = f.WriteString(val.ID)
+			_, err = f.WriteString(val.ID + "\n")
 			if err != nil {
 				log.Fatal(err)
 			}
