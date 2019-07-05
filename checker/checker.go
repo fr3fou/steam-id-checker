@@ -25,33 +25,38 @@ func CheckIds(words io.Reader, key string, workerAmount int) {
 	jobs := make(chan idChecker)
 	results := make(chan idChecker)
 
+	limit := 0
+
+	// Fill in the jobs queue (channel)
+	go func() {
+		for wordsScanner.Scan() {
+			id := wordsScanner.Text()
+
+			jobs <- idChecker{
+				id:      id,
+				key:     key,
+				isTaken: false,
+			}
+
+			limit++
+		}
+
+		close(jobs)
+	}()
+
 	// Start up workerAmount of workers
 	for w := 1; w < workerAmount; w++ {
 		go worker(jobs, results)
 	}
 
-	limit := 0
-
-	// Fill in the jobs queue (channel)
-	for ; wordsScanner.Scan(); limit++ {
-		id := wordsScanner.Text()
-		jobs <- idChecker{
-			id:      id,
-			key:     key,
-			isTaken: false,
-		}
-	}
-
-	close(jobs)
-
 	for i := 0; i < limit; i++ {
 		result := <-results
 		if !result.isTaken {
 			// Probs change to something else other than fmt.Println?
-			fmt.Printf("(%d out of %d) - %s is not taken on Steam!", i, limit, result.id)
+			fmt.Printf("(%d out of %d) - %s is not taken on Steam!\n", i, limit, result.id)
 		} else {
 			// Probs change to something else other than fmt.Println?
-			fmt.Printf("(%d out of %d) - %s is taken on Steam.", i, limit, result.id)
+			fmt.Printf("(%d out of %d) - %s is taken on Steam.\n", i, limit, result.id)
 		}
 	}
 }
