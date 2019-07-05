@@ -20,7 +20,7 @@ func main() {
 
 func interactiveCli() {
 	scanner := bufio.NewScanner(os.Stdin)
-	finished := make(chan string)
+	finished := make(chan checker.SteamID)
 
 	fmt.Print("Enter the path to txt file: ")
 	scanner.Scan()
@@ -49,53 +49,68 @@ func interactiveCli() {
 		}
 	}
 
+	// we don't need the API key if the user is going to be scraping
 	if checkForScrapingMethod(method) {
 		go checker.CheckIDs(file, workerAmount, finished)
+	} else {
+		key := ""
 
-		for val := range finished {
-			fmt.Println(val)
+		contents, err := ioutil.ReadFile(".key")
+
+		// If we have read the file successfully, this means that there must be a key inside
+		if err == nil {
+			fmt.Printf("An existing Steam API key has been found (%s...), would you like to use it? (Y/n): ", string(contents)[:6])
+			scanner.Scan()
+			useExisting := scanner.Text()
+
+			if checkForAgreement(useExisting) {
+				key = string(contents)
+			}
 		}
 
-		return
-	}
+		// If the key still empty, ask for it
+		if key == "" {
+			fmt.Print("Enter enter your Steam API key (you can get yours at https://steamcommunity.com/dev/apikey): ")
 
-	key := ""
+			scanner.Scan()
+			key = scanner.Text()
 
-	contents, err := ioutil.ReadFile(".key")
+			fmt.Print("Would you like to remember the key for future use? (Y/n): ")
 
-	// If we have read the file successfully, this means that there must be a key inside
-	if err == nil {
-		fmt.Printf("An existing Steam API key has been found (%s...), would you like to use it? (Y/n): ", string(contents)[:6])
-		scanner.Scan()
-		useExisting := scanner.Text()
+			scanner.Scan()
+			remember := strings.Trim(scanner.Text(), " ")
 
-		if checkForAgreement(useExisting) {
-			key = string(contents)
+			if checkForAgreement(remember) {
+				ioutil.WriteFile(".key", []byte(key), 0644)
+			}
 		}
+
+		go checker.CheckIDsWithAPI(file, key, workerAmount, finished)
+
 	}
 
-	// If the key still empty, ask for it
-	if key == "" {
-		fmt.Print("Enter enter your Steam API key (you can get yours at https://steamcommunity.com/dev/apikey): ")
+	f, err := os.OpenFile("results", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
 
-		scanner.Scan()
-		key = scanner.Text()
-
-		fmt.Print("Would you like to remember the key for future use? (Y/n): ")
-
-		scanner.Scan()
-		remember := strings.Trim(scanner.Text(), " ")
-
-		if checkForAgreement(remember) {
-			ioutil.WriteFile(".key", []byte(key), 0644)
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	go checker.CheckIDsWithAPI(file, key, workerAmount, finished)
 
 	for val := range finished {
-		fmt.Println(val)
+		fmt.Println(val.Msg)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if !val.IsTaken {
+			_, err = f.WriteString(val.ID)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
+
+	f.Close()
 }
 
 func checkForAgreement(s string) bool {

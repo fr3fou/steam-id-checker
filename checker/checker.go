@@ -14,9 +14,18 @@ import (
 	"github.com/ti/nasync"
 )
 
+// SteamID is the underlying struct
+// which is used to communicate using the channels between the goroutines
+// or the caller of CheckIDs / CheckIDsWithAPI
+type SteamID struct {
+	ID      string
+	IsTaken bool
+	Msg     string
+}
+
 // CheckIDsWithAPI takes in an io.Reader and calls the Steam API against each word in
 // the reader with workerAmont of workers to check whether the given ID exists
-func CheckIDsWithAPI(words io.Reader, key string, workerAmount int, finished chan string) {
+func CheckIDsWithAPI(words io.Reader, key string, workerAmount int, finished chan SteamID) {
 	async := nasync.New(workerAmount, workerAmount)
 	defer async.Close()
 
@@ -38,7 +47,7 @@ func CheckIDsWithAPI(words io.Reader, key string, workerAmount int, finished cha
 
 // CheckIDs takes in an io.Reader and scrapes the webpage against each word in
 // the reader with workerAmount of workers to check whther the given ID exists
-func CheckIDs(words io.Reader, workerAmount int, finished chan string) {
+func CheckIDs(words io.Reader, workerAmount int, finished chan SteamID) {
 	async := nasync.New(workerAmount, workerAmount)
 	defer async.Close()
 
@@ -58,7 +67,7 @@ func CheckIDs(words io.Reader, workerAmount int, finished chan string) {
 	close(finished)
 }
 
-func checkID(id string, wg *sync.WaitGroup, finished chan string) {
+func checkID(id string, wg *sync.WaitGroup, finished chan SteamID) {
 	url := fmt.Sprintf("http://steamcommunity.com/id/%s", id)
 	resp, err := http.Get(url)
 
@@ -76,20 +85,36 @@ func checkID(id string, wg *sync.WaitGroup, finished chan string) {
 	}
 
 	if strings.Contains(string(html), "<h3>The specified profile could not be found.</h3>") {
-		finished <- fmt.Sprintf("%s is not taken on Steam!", id)
+		finished <- SteamID{
+			ID:      id,
+			IsTaken: false,
+			Msg:     fmt.Sprintf("%s is not taken on Steam!", id),
+		}
 	} else {
-		finished <- fmt.Sprintf("%s is taken on Steam!", id)
+		finished <- SteamID{
+			ID:      id,
+			IsTaken: true,
+			Msg:     fmt.Sprintf("%s is taken on Steam!", id),
+		}
 	}
 }
 
-func checkIDWithAPI(id, key string, wg *sync.WaitGroup, finished chan string) {
+func checkIDWithAPI(id, key string, wg *sync.WaitGroup, finished chan SteamID) {
 	// TODO: error handling
 	resp, _ := steamapi.ResolveVanityURL(id, key)
 	defer wg.Done()
 
 	if !(resp.Response.Success == 1) {
-		finished <- fmt.Sprintf("%s is not taken on Steam!", id)
+		finished <- SteamID{
+			ID:      id,
+			IsTaken: false,
+			Msg:     fmt.Sprintf("%s is not taken on Steam!", id),
+		}
 	} else {
-		finished <- fmt.Sprintf("%s is taken on Steam!", id)
+		finished <- SteamID{
+			ID:      id,
+			IsTaken: true,
+			Msg:     fmt.Sprintf("%s is taken on Steam!", id),
+		}
 	}
 }
