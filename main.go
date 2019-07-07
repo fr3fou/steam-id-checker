@@ -19,11 +19,60 @@ func main() {
 	flag.BoolVar(&isInteractive, "interactive", false, "display an interactive prompt to check IDs")
 	flag.BoolVar(&isInteractive, "i", false, "display an interactive prompt to check IDs")
 
+	filePath := ""
+	flag.StringVar(&filePath, "file", "example", "path to the file which contains the IDs")
+	flag.StringVar(&filePath, "f", "example", "path to the file which contains the IDs")
+
+	workerAmount := 10
+	flag.IntVar(&workerAmount, "workers", 10, "path to the file which contains the IDs")
+	flag.IntVar(&workerAmount, "w", 10, "path to the file which contains the IDs")
+
 	flag.Parse()
 
 	if isInteractive {
 		interactiveCli()
+		return
 	}
+
+	finished := make(chan checker.SteamID)
+
+	fi, err := os.Stdin.Stat()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if fi.Mode()&os.ModeNamedPipe == 0 {
+		if filePath == "" {
+			log.Fatal("you need to pass in a file using the --file or -f flag")
+		}
+
+		file, err := os.Open(filePath)
+
+		if err != nil {
+			log.Fatal("you need to pass in a valid file using the --file or -f flag", err)
+		}
+
+		go checker.CheckIDs(file, workerAmount, finished)
+
+		for val := range finished {
+			if !val.IsTaken {
+				fmt.Println(val.ID)
+			}
+		}
+
+		return
+	}
+
+	go checker.CheckIDs(os.Stdin, workerAmount, finished)
+
+	for val := range finished {
+		if !val.IsTaken {
+			fmt.Println(val.ID)
+		}
+	}
+
+	// we have things coming through a pipe
 }
 
 func interactiveCli() {
@@ -105,10 +154,6 @@ func interactiveCli() {
 
 	for val := range finished {
 		fmt.Println(val.Msg)
-
-		if err != nil {
-			log.Fatal(err)
-		}
 
 		if !val.IsTaken {
 			_, err = f.WriteString(val.ID + "\n")
