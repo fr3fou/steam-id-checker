@@ -16,8 +16,8 @@ import (
 
 func main() {
 	isInteractive := false
-	flag.BoolVar(&isInteractive, "interactive", false, "display an interactive prompt to check IDs")
-	flag.BoolVar(&isInteractive, "i", false, "display an interactive prompt to check IDs")
+	flag.BoolVar(&isInteractive, "interactive", false, "display an interactive prompt to check IDs - when using this mode, both taken and free IDs are printed")
+	flag.BoolVar(&isInteractive, "i", false, "display an interactive prompt to check IDs - when using this mode, both taken and free IDs are printed")
 
 	filePath := ""
 	flag.StringVar(&filePath, "file", "example", "path to the file which contains the IDs")
@@ -71,8 +71,6 @@ func main() {
 			fmt.Println(val.ID)
 		}
 	}
-
-	// we have things coming through a pipe
 }
 
 func interactiveCli() {
