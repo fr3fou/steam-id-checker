@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 
+	"flag"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -14,8 +15,15 @@ import (
 )
 
 func main() {
-	// TODO: check for interactive flag (-i)
-	interactiveCli()
+	isInteractive := false
+	flag.BoolVar(&isInteractive, "interactive", false, "display an interactive prompt to check IDs")
+	flag.BoolVar(&isInteractive, "i", false, "display an interactive prompt to check IDs")
+
+	flag.Parse()
+
+	if isInteractive {
+		interactiveCli()
+	}
 }
 
 func interactiveCli() {
