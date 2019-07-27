@@ -5,19 +5,19 @@ import (
 )
 
 func TestCheckID(t *testing.T) {
-	res := make(chan SteamID, 2)
+	taken, err := checkID("fr3fou")
 
-	checkID("fr3fou", nil, res)
-
-	taken := <-res
-	if !taken.IsTaken {
-		t.Error("CheckIDs(\"fr3fou\", &wg, res) returned IsTaken = false; expected true")
+	if err != nil {
+		t.Errorf("CheckIDs(\"fr3fou\") returned err = %s; expected nil", err.Error())
+	} else if !taken.IsTaken {
+		t.Error("CheckIDs(\"fr3fou\") returned IsTaken = false; expected true")
 	}
 
-	checkID("asdfasdfasdfasdfasdf0a9sd8f0asd8f90as8d09fa8sd09fa8s0df", nil, res)
+	free, err := checkID("asdfasdfasdfasdfasdf0a9sd8f0asd8f90as8d09fa8sd09fa8s0df")
 
-	taken = <-res
-	if taken.IsTaken {
-		t.Error("CheckIDs(\"asdfasdfasdfasdfasdf0a9sd8f0asd8f90as8d09fa8sd09fa8s0df\", &wg, res) returned IsTaken = true; expected false")
+	if err != nil {
+		t.Errorf("CheckIDs(\"asdfasdfasdfasdfasdf0a9sd8f0asd8f90as8d09fa8sd09fa8s0df\") returned err = %s; expected nil", err.Error())
+	} else if free.IsTaken {
+		t.Error("CheckIDs(\"asdfasdfasdfasdfasdf0a9sd8f0asd8f90as8d09fa8sd09fa8s0df\") returned IsTaken = true; expected false")
 	}
 }
