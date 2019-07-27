@@ -34,42 +34,63 @@ func main() {
 		return
 	}
 
-	finished := make(chan checker.SteamID)
+	// Using a semaphore as a rate limiter
+	sem := make(chan struct{}, workerAmount)
 
+	// Make a scanner for our file
+	var wordsScanner *bufio.Scanner
+
+	// Check for the stdin file descriptor
 	fi, err := os.Stdin.Stat()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Check if don't have text coming from the pipe
 	if fi.Mode()&os.ModeNamedPipe == 0 {
 		if filePath == "" {
 			log.Fatal("you need to pass in a file using the --file or -f flag")
 		}
 
+		// Open a reader to the file
 		file, err := os.Open(filePath)
 
 		if err != nil {
 			log.Fatal("you need to pass in a valid file using the --file or -f flag", err)
 		}
 
-		go checker.CheckIDs(file, workerAmount, finished)
+		wordsScanner = bufio.NewScanner(file)
+	} else {
+		wordsScanner = bufio.NewScanner(os.Stdin)
+	}
 
-		for val := range finished {
+	// Go through each of the words
+	for wordsScanner.Scan() {
+		// Add a "job" / queue up our task
+		sem <- struct{}{}
+		go func(id string) {
+			// Remove
+			defer func() { <-sem }()
+
+			// Check the current ID
+			val, err := checker.CheckID(id)
+
+			if err != nil {
+				fmt.Errorf(err.Error())
+				return
+			}
+
+			// Print the ID if it's not taken
 			if !val.IsTaken {
 				fmt.Println(val.ID)
 			}
-		}
-
-		return
+		}(wordsScanner.Text())
 	}
 
-	go checker.CheckIDs(os.Stdin, workerAmount, finished)
-
-	for val := range finished {
-		if !val.IsTaken {
-			fmt.Println(val.ID)
-		}
+	// Wait for the last workerAmount amount of goroutines
+	for i := 0; i < workerAmount; i++ {
+		sem <- struct{}{}
 	}
 }
 
