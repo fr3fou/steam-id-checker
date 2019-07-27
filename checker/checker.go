@@ -29,7 +29,7 @@ func CheckIDsWithAPI(words io.Reader, key string) ([]SteamID, error) {
 	for wordsScanner.Scan() {
 		id := wordsScanner.Text()
 
-		res, err := checkIDWithAPI(id, key)
+		res, err := CheckIDWithAPI(id, key)
 
 		if err != nil {
 			return nil, err
@@ -74,6 +74,8 @@ func CheckIDs(words io.Reader) ([]SteamID, error) {
 	return ids, nil
 }
 
+// CheckID takes an ID and checks whether
+// the given ID is taken by scraping the steam webpage
 func CheckID(id string) (SteamID, error) {
 	// Sometimes the Steam servers give a false message, signifying that an ID is not taken
 	// This occurs at random / if the severs are overloaded
@@ -99,6 +101,15 @@ func CheckID(id string) (SteamID, error) {
 	return res, err
 }
 
+// checkID is an internal function that takes an ID and
+// scrapes the steam webpage for the given ID, checking
+// if the given ID is taken.
+// The difference between the internal checkID and the
+// exported CheckID is that CheckID contains extra logic
+// that should be ideally abstracted from the user,
+// (Sometimes the Steam servers give a false message, signifying that an ID is not taken
+// This occurs at random / if the severs are overloaded
+// We can work around this by making a few more requests and checking for its true value)
 func checkID(id string) (SteamID, error) {
 	url := fmt.Sprintf("http://steamcommunity.com/id/%s", id)
 	resp, err := http.Get(url)
@@ -130,6 +141,8 @@ func checkID(id string) (SteamID, error) {
 	}, nil
 }
 
+// CheckIDWithAPI takes an ID and a key and checks whether
+// the given ID is taken using the SteamAPI
 func CheckIDWithAPI(id, key string) (SteamID, error) {
 	// TODO: error handling
 	resp, err := steamapi.ResolveVanityURL(id, key)
