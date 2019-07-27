@@ -130,7 +130,7 @@ func checkID(id string) (SteamID, error) {
 	}, nil
 }
 
-func checkIDWithAPI(id, key string) (SteamID, error) {
+func CheckIDWithAPI(id, key string) (SteamID, error) {
 	// TODO: error handling
 	resp, err := steamapi.ResolveVanityURL(id, key)
 

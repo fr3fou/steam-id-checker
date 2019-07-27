@@ -96,7 +96,6 @@ func main() {
 
 func interactiveCli() {
 	scanner := bufio.NewScanner(os.Stdin)
-	finished := make(chan checker.SteamID)
 
 	fmt.Print("Enter the path to txt file: ")
 	scanner.Scan()
@@ -125,11 +124,49 @@ func interactiveCli() {
 		}
 	}
 
+	// Using a semaphore as a rate limiter
+	sem := make(chan struct{}, workerAmount)
+
+	// Open the file for reading
+	f, err := os.OpenFile("results", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Make a scanner for our file
+	wordsScanner := bufio.NewScanner(file)
+
+	// Function that gets called for every ID
+	var checkID func(id string)
+
 	// we don't need the API key if the user is going to be scraping
 	if checkForScrapingMethod(method) {
-		go checker.CheckIDs(file, workerAmount, finished)
+		// Call the regular checker.CheckID function when we won't be using the API
+		checkID = func(id string) {
+			// Remove
+			defer func() { <-sem }()
+
+			// Check the current ID
+			val, err := checker.CheckID(id)
+
+			if err != nil {
+				fmt.Errorf(err.Error())
+				return
+			}
+
+			// Print to stdin and write the ID to file
+			fmt.Println(val.Msg)
+
+			if !val.IsTaken {
+				_, err = f.WriteString(val.ID + "\n")
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
 	} else {
-		key := ""
+		var key string
 
 		contents, err := ioutil.ReadFile(".key")
 
@@ -161,25 +198,41 @@ func interactiveCli() {
 			}
 		}
 
-		go checker.CheckIDsWithAPI(file, key, workerAmount, finished)
+		// Call the checker.CheckIDWithAPI function when using the API
+		checkID = func(id string) {
+			// Remove
+			defer func() { <-sem }()
 
-	}
+			// Check the current ID using the API
+			val, err := checker.CheckIDWithAPI(id, key)
 
-	f, err := os.OpenFile("results", os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for val := range finished {
-		fmt.Println(val.Msg)
-
-		if !val.IsTaken {
-			_, err = f.WriteString(val.ID + "\n")
 			if err != nil {
-				log.Fatal(err)
+				fmt.Errorf(err.Error())
+				return
+			}
+
+			// Print to stdin and write the ID to file
+			fmt.Println(val.Msg)
+
+			if !val.IsTaken {
+				_, err = f.WriteString(val.ID + "\n")
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
+	}
+
+	// Go through each of the words
+	for wordsScanner.Scan() {
+		// Add a "job" / queue up our task
+		sem <- struct{}{}
+		go checkID(wordsScanner.Text())
+	}
+
+	// Wait for the last workerAmount amount of goroutines
+	for i := 0; i < workerAmount; i++ {
+		sem <- struct{}{}
 	}
 
 	f.Close()
