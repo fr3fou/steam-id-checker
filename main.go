@@ -77,7 +77,7 @@ func main() {
 			val, err := checker.CheckID(id)
 
 			if err != nil {
-				fmt.Errorf(err.Error())
+				fmt.Println(err.Error())
 				return
 			}
 
@@ -151,7 +151,7 @@ func interactiveCli() {
 			val, err := checker.CheckID(id)
 
 			if err != nil {
-				fmt.Errorf(err.Error())
+				fmt.Println(err.Error())
 				return
 			}
 
@@ -207,7 +207,7 @@ func interactiveCli() {
 			val, err := checker.CheckIDWithAPI(id, key)
 
 			if err != nil {
-				fmt.Errorf(err.Error())
+				fmt.Println(err.Error())
 				return
 			}
 
