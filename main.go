@@ -24,8 +24,8 @@ func main() {
 	flag.StringVar(&filePath, "f", "example", "path to the file which contains the IDs")
 
 	workerAmount := 10
-	flag.IntVar(&workerAmount, "workers", 10, "path to the file which contains the IDs")
-	flag.IntVar(&workerAmount, "w", 10, "path to the file which contains the IDs")
+	flag.IntVar(&workerAmount, "workers", 10, "amount of workers")
+	flag.IntVar(&workerAmount, "w", 10, "amount of workers")
 
 	flag.Parse()
 
