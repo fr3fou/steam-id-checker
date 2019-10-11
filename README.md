@@ -18,7 +18,7 @@ Simple tool that helps you check if a list of IDs are available on Steam.
   -interactive
     	display an interactive prompt to check IDs - when using this mode, both taken and free IDs are printed
   -w int
-    	path to the file which contains the IDs (default 10)
+    	amount of workers (default 10)
   -workers int
-    	path to the file which contains the IDs (default 10)
+    	amount of workers (default 10)
 ```
